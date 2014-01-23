@@ -74,6 +74,10 @@ movie = [
 [ 0x1F, 0x15, 0x1F, 0x2,  0x2,  0x1F, 0x15, 0x1F ]
 ]
 
+iPlayer = [
+[ 0x18, 0x4, 0x12, 0x11, 0x11, 0x12, 0x14, 0x18 ]
+]
+
 pause = [
 [ 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE ],
 [ 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE ]
@@ -645,9 +649,15 @@ def DisplayNowPlaying(artist, album, title, playerType):
     GotoLine(3)
     ShowMessage(title[:20])
   elif playerType == "video":
-    LoadSymbolBlock(movie)
+    response = xbmc.Player.GetItem(playerid=1, properties=["title"])
+    if response['item']['type'] == "song":
+      icon = iPlayer
+      LoadSymbolBlock(iPlayer)
+    else:
+      icon = movie
+      LoadSymbolBlock(movie)
     GotoXY(0,16)
-    for count in range(len(movie)):
+    for count in range(len(icon)):
       SendByte(count,True)
     ShowMessageWrap(title,1)
 
