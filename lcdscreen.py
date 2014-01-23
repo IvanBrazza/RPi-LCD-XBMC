@@ -68,6 +68,12 @@ musicNote = [
 [ 0x1e, 0x1e, 0x2, 0x2, 0xE, 0xE,  0xE,  0x0  ]
 ]
 
+movie = [
+[ 0x1F, 0x15, 0x1F, 0x8,  0x8,  0x1F, 0x15, 0x1F ],
+[ 0x1F, 0xA,  0x1F, 0x11, 0x11, 0x1F, 0xA,  0x1F ],
+[ 0x1F, 0x15, 0x1F, 0x2,  0x2,  0x1F, 0x15, 0x1F ]
+]
+
 pause = [
 [ 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE ],
 [ 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE, 0xE ]
@@ -326,6 +332,7 @@ def BigClock():
           ShowMessage("      Goodbye")
           xbmc.System.Shutdown()
         elif switchValues[0] == 1:
+          ClearDisplay()
           break
         time.sleep(0.08)
     elif switchValues[2] == 1:
@@ -340,7 +347,7 @@ def BigClock():
       DisplayWeather()
       LoadSymbolBlock(digits)
     try:
-      result = xbmc.Player.GetItem(playerid=0, properties=["title", "album", "artist"])
+      result = xbmc.Player.GetActivePlayers()
       if result:
         NowPlaying()
         time.sleep(1)
@@ -558,24 +565,33 @@ def LetsParty():
 
 def NowPlaying():
   time.sleep(0.5)
-  result = xbmc.Player.GetItem(playerid=0, properties=["title", "album", "artist"])
-  artist = result["item"]["artist"][0]
-  album = result["item"]["album"]
-  title = result["item"]["title"]
-  DisplayNowPlaying(artist, album, title)
+  result = xbmc.Player.GetActivePlayers()
+  playerID = result[0]['playerid']
+  playerType = result[0]['type']
+  if playerType == "audio":
+    result = xbmc.Player.GetItem(playerid=playerID, properties=["title", "album", "artist"])
+    artist = result["item"]["artist"][0]
+    album = result["item"]["album"]
+    title = result["item"]["title"]
+  elif playerType == "video":
+    result = xbmc.Player.GetItem(playerid=playerID, properties=["title"])
+    title = result["item"]["title"]
+    album = " "
+    artist = " "
+  DisplayNowPlaying(artist, album, title, playerType)
   while (True):
     switchValues = CheckSwitches() 
     if switchValues[0] == 1:
       AnimatedVBarTest()
-      DisplayNowPlaying(artist, album, title)
+      DisplayNowPlaying(artist, album, title, playerType)
     if switchValues[1] == 1:
       xbmc.Input.ExecuteAction(action="playpause")
-      if xbmc.Player.GetProperties(playerid=0, properties=["speed"])["speed"] == 0:
+      if xbmc.Player.GetProperties(playerid=playerID, properties=["speed"])["speed"] == 0:
         LoadSymbolBlock(pause)
         GotoXY(0,16)
         for count in range(len(pause)):
           SendByte(count,True) 
-      elif xbmc.Player.GetProperties(playerid=0, properties=["speed"])["speed"] == 1:
+      elif xbmc.Player.GetProperties(playerid=playerID, properties=["speed"])["speed"] == 1:
         LoadSymbolBlock(musicNote)
         GotoXY(0,16)
         for count in range(len(musicNote)):
@@ -592,34 +608,48 @@ def NowPlaying():
     elif switchValues[3] == 1:
       xbmc.Input.ExecuteAction(action="skipnext")
     try:
-      result = xbmc.Player.GetItem(playerid=0, properties=["title", "album", "artist"])
-      newartist = result["item"]["artist"][0]
-      newalbum = result["item"]["album"]
-      newtitle = result["item"]["title"]
-      if newtitle != title:
-        artist = newartist
-        album = newalbum
-        title = newtitle
-        DisplayNowPlaying(artist, album, title)
+      if playerType == "audio":
+        result = xbmc.Player.GetItem(playerid=playerID, properties=["title", "album", "artist"])
+        newartist = result["item"]["artist"][0]
+        newalbum = result["item"]["album"]
+        newtitle = result["item"]["title"]
+        if newtitle != title:
+          artist = newartist
+          album = newalbum
+          title = newtitle
+          DisplayNowPlaying(artist, album, title, playerType)
+      elif playerType == "video":
+        result = xbmc.Player.GetItem(playerid=playerID, properties=["title"])
+        newtitle = result["item"]["title"]
+        if newtitle != title:
+          title = newtitle
+          DisplayNowPlaying(artist, album, title, playerType)
       time.sleep(0.03)
     except:
       ClearDisplay()
       return
 
-def DisplayNowPlaying(artist, album, title):
+def DisplayNowPlaying(artist, album, title, playerType):
   ClearDisplay()
   GotoLine(0)
   ShowMessage("Now Playing:")
-  LoadSymbolBlock(musicNote)
-  GotoXY(0,16)
-  for count in range(len(musicNote)):
-    SendByte(count,True) 
-  GotoLine(1)
-  ShowMessage(artist[:20])
-  GotoLine(2)
-  ShowMessage(album[:20])
-  GotoLine(3)
-  ShowMessage(title[:20])
+  if playerType == "audio":
+    LoadSymbolBlock(musicNote)
+    GotoXY(0,16)
+    for count in range(len(musicNote)):
+      SendByte(count,True)
+    GotoLine(1)
+    ShowMessage(artist[:20])
+    GotoLine(2)
+    ShowMessage(album[:20])
+    GotoLine(3)
+    ShowMessage(title[:20])
+  elif playerType == "video":
+    LoadSymbolBlock(movie)
+    GotoXY(0,16)
+    for count in range(len(movie)):
+      SendByte(count,True)
+    ShowMessageWrap(title,1)
 
 def XBMCVolUp():
   CurrentVolume = GetVolume()
