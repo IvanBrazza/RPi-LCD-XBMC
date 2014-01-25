@@ -578,10 +578,16 @@ def NowPlaying():
     album = result["item"]["album"]
     title = result["item"]["title"]
   elif playerType == "video":
-    result = xbmc.Player.GetItem(playerid=playerID, properties=["title"])
-    title = result["item"]["title"]
-    album = " "
-    artist = " "
+    if xbmc.Player.GetItem(playerid=1,properties=["showtitle"])["item"]["type"] == "episode":
+      result = xbmc.Player.GetItem(playerid=1,properties=["showtitle", "title"])
+      title = result["item"]["title"]
+      artist = result["item"]["showtitle"]
+      album = " "
+    else:
+      result = xbmc.Player.GetItem(playerid=playerID, properties=["title"])
+      title = result["item"]["title"]
+      album = " "
+      artist = " "
   DisplayNowPlaying(artist, album, title, playerType)
   while (True):
     switchValues = CheckSwitches() 
@@ -653,13 +659,16 @@ def DisplayNowPlaying(artist, album, title, playerType):
     if response['item']['type'] == "song":
       icon = iPlayer
       LoadSymbolBlock(iPlayer)
-    else:
+      ShowMessageWrap(title,1)
+    elif response["item"]["type"] == "episode":
       icon = movie
       LoadSymbolBlock(movie)
+      GotoLine(1)
+      ShowMessage(xbmc.Player.GetItem(playerid=1, properties=["showtitle"])["item"]["showtitle"])
+      ShowMessageWrap(title,2)
     GotoXY(0,16)
     for count in range(len(icon)):
       SendByte(count,True)
-    ShowMessageWrap(title,1)
 
 def XBMCVolUp():
   CurrentVolume = GetVolume()
