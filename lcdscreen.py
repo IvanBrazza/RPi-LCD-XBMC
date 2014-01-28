@@ -666,6 +666,10 @@ def DisplayNowPlaying(artist, album, title, playerType):
       GotoLine(1)
       ShowMessage(xbmc.Player.GetItem(playerid=1, properties=["showtitle"])["item"]["showtitle"])
       ShowMessageWrap(title,2)
+    else:
+      icon = movie
+      LoadSymbolBlock(movie)
+      ShowMessageWrap(title,1)
     GotoXY(0,16)
     for count in range(len(icon)):
       SendByte(count,True)
@@ -784,7 +788,7 @@ def DisplayWeather():
     time.sleep(3)
     return
 
-def displayPiInfo():
+def DisplayPiInfo():
   temp = str(int(open('/sys/class/thermal/thermal_zone0/temp').read()) / 1e3)[:4]
   
 
